@@ -25,7 +25,7 @@ app = FastAPI(title="QuoteChat API")
 # Disable CORS. Do not remove this for full-stack development.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["https://quote-messaging-app-rw28saj1.devinapps.com", "http://localhost:5173"],  # Explicitly list allowed origins
     allow_credentials=True,
     allow_methods=["*"],  # Allows all methods
     allow_headers=["*"],  # Allows all headers
@@ -37,9 +37,10 @@ async def options_middleware(request: Request, call_next):
     if request.method == "OPTIONS":
         # Return a response with CORS headers for preflight requests
         response = Response()
-        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Origin"] = "https://quote-messaging-app-rw28saj1.devinapps.com"
         response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
-        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type"
+        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
         response.headers["Access-Control-Max-Age"] = "86400"  # Cache preflight response for 24 hours
         return response
     
