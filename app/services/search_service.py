@@ -49,14 +49,18 @@ class SearchService:
         Returns:
             List of dictionaries containing search results
         """
-        if content_type == ContentType.MOVIE_QUOTE:
-            return self.movie_quotes_service.search_movie_quotes(query, max_results)
-        elif content_type == ContentType.SONG_LYRIC:
-            return self.lyrics_service.search_lyrics(query, max_results)
-        elif content_type == ContentType.MEME:
-            return self.memes_service.search_memes(query, max_results)
-        else:
-            logger.warning(f"Unknown content type: {content_type}")
+        try:
+            if content_type == ContentType.MOVIE_QUOTE:
+                return self.movie_quotes_service.search_movie_quotes(query, max_results)
+            elif content_type == ContentType.SONG_LYRIC:
+                return self.lyrics_service.search_lyrics(query, max_results)
+            elif content_type == ContentType.MEME:
+                return self.memes_service.search_memes(query, max_results)
+            else:
+                logger.warning(f"Unknown content type: {content_type}")
+                return []
+        except Exception as e:
+            logger.error(f"Error searching for {content_type.value} with query '{query}': {str(e)}")
             return []
     
     def get_popular_content(self, content_type: ContentType, max_results: int = 5) -> List[Dict[str, Any]]:

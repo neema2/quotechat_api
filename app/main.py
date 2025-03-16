@@ -186,6 +186,11 @@ def search_content(query: str, content_type: ContentType):
         # Use enhanced search service
         search_results = search_service.search_content(query, service_content_type)
         
+        # If no results were found, log a warning but don't raise an exception
+        if not search_results:
+            logger.warning(f"No results found for {content_type.value} with query: {query}")
+            return []
+        
         # Convert to API response model
         results = []
         for i, item in enumerate(search_results):

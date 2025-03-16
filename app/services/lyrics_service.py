@@ -350,22 +350,47 @@ class LyricsService:
             
         Returns:
             List of dictionaries containing song information
-            
-        Raises:
-            Exception: If no results are found from any of the external sources
         """
+        # Log the search attempt
+        logger.info(f"Searching for lyrics with query: {query}")
+        
         # Search using multiple external methods
         genius_results = self.search_lyrics_genius(query, max_results=max_results//3)
+        logger.info(f"Genius search returned {len(genius_results)} results")
+        
         google_results = self.search_lyrics_google(query, max_results=max_results//3)
+        logger.info(f"Google search returned {len(google_results)} results")
+        
         chosic_results = self.search_lyrics_chosic(query, max_results=max_results//3)
+        logger.info(f"Chosic search returned {len(chosic_results)} results")
         
         # Combine results
         all_results = genius_results + google_results + chosic_results
         
         # Check if we have any results
         if not all_results:
-            logger.error(f"No lyrics found for query: {query}")
-            raise Exception(f"No lyrics found for query: {query}. Please try a different search term.")
+            # Instead of raising an exception, try a more lenient search
+            logger.warning(f"No lyrics found for query: {query}, trying more lenient search")
+            
+            # Try searching with a more general query by taking just the first word
+            # or a substring of the original query
+            simplified_query = query.split()[0] if ' ' in query else query[:min(len(query), 5)]
+            
+            if simplified_query != query:
+                logger.info(f"Trying simplified query: {simplified_query}")
+                
+                # Try again with the simplified query
+                genius_results = self.search_lyrics_genius(simplified_query, max_results=max_results//3)
+                google_results = self.search_lyrics_google(simplified_query, max_results=max_results//3)
+                chosic_results = self.search_lyrics_chosic(simplified_query, max_results=max_results//3)
+                
+                # Combine results
+                all_results = genius_results + google_results + chosic_results
+        
+        # If we still have no results, return an empty list instead of raising an exception
+        if not all_results:
+            logger.error(f"No lyrics found for query: {query} or simplified query")
+            return []
         
         # Sort by relevance score
         all_results.sort(key=lambda x: x.get('relevanceScore', 0), reverse=True)
