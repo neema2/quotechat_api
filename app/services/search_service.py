@@ -74,14 +74,29 @@ class SearchService:
             # Use fallback database for popular content
             return self.movie_quotes_service.search_movie_quotes_fallback("", max_results)
         elif content_type == ContentType.SONG_LYRIC:
-            # Use a list of popular songs for lyrics
+            # Use a list of popular songs for lyrics with external search
             popular_queries = ["sweet dreams", "bohemian rhapsody", "imagine", "thriller", "hotel california"]
             results = []
-            for query in popular_queries[:max_results]:
-                query_results = self.lyrics_service.search_lyrics_fallback(query, 1)
-                if query_results:
-                    results.extend(query_results)
-            return results[:max_results]
+            try:
+                for query in popular_queries[:max_results]:
+                    try:
+                        # Use the enhanced search instead of fallback
+                        query_results = self.lyrics_service.search_lyrics(query, 1)
+                        if query_results:
+                            results.extend(query_results)
+                    except Exception as e:
+                        logger.warning(f"Error searching for popular lyrics with query '{query}': {str(e)}")
+                        continue
+                
+                # If we couldn't find any results, raise an exception
+                if not results:
+                    raise Exception("No popular lyrics found from external sources")
+                    
+                return results[:max_results]
+            except Exception as e:
+                logger.error(f"Error getting popular lyrics: {str(e)}")
+                # Return empty list instead of using fallback
+                return []
         elif content_type == ContentType.MEME:
             # Use fallback database for popular memes
             return self.memes_service.search_memes_fallback("", max_results)

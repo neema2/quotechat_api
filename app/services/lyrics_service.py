@@ -35,20 +35,6 @@ class LyricsService:
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/14.1.1 Safari/605.1.15',
             'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.107 Safari/537.36'
         ]
-        
-        # Fallback lyrics database
-        self.song_lyrics = [
-            {"content": "And I will always love you.", "source": "Whitney Houston - I Will Always Love You"},
-            {"content": "Don't stop believin'.", "source": "Journey - Don't Stop Believin'"},
-            {"content": "We will, we will rock you!", "source": "Queen - We Will Rock You"},
-            {"content": "I'm on the highway to hell.", "source": "AC/DC - Highway to Hell"},
-            {"content": "Imagine all the people living life in peace.", "source": "John Lennon - Imagine"},
-            {"content": "I want to hold your hand.", "source": "The Beatles - I Want to Hold Your Hand"},
-            {"content": "Like a rolling stone.", "source": "Bob Dylan - Like a Rolling Stone"},
-            {"content": "Every breath you take, I'll be watching you.", "source": "The Police - Every Breath You Take"},
-            {"content": "Sweet dreams are made of this.", "source": "Eurythmics - Sweet Dreams"},
-            {"content": "I can't get no satisfaction.", "source": "The Rolling Stones - Satisfaction"},
-        ]
     
     def _get_random_user_agent(self) -> str:
         """Get a random user agent to avoid detection as a bot."""
@@ -352,61 +338,11 @@ class LyricsService:
             logger.error(f"Error searching Chosic for lyrics: {str(e)}")
             return []
     
-    def search_lyrics_fallback(self, query: str, max_results: int = 5) -> List[Dict[str, Any]]:
-        """
-        Search for lyrics using the fallback database with fuzzy matching.
-        
-        Args:
-            query: Search query string
-            max_results: Maximum number of results to return
-            
-        Returns:
-            List of dictionaries containing song information
-        """
-        results = []
-        query = query.lower()
-        
-        for i, item in enumerate(self.song_lyrics):
-            content = item["content"].lower()
-            source = item["source"]
-            
-            # Calculate relevance score
-            score = 0
-            
-            # Exact match
-            if query == content:
-                score = 1.0
-            # Contains match
-            elif query in content:
-                score = 0.8
-            # Word-level matching
-            else:
-                query_words = query.split()
-                content_words = content.split()
-                
-                for q_word in query_words:
-                    for c_word in content_words:
-                        if q_word == c_word:
-                            score += 0.2
-                        elif q_word in c_word:
-                            score += 0.1
-            
-            if score > 0:
-                results.append({
-                    "content": item["content"],
-                    "source": source,
-                    "relevanceScore": score
-                })
-        
-        # Sort by relevance score
-        results.sort(key=lambda x: x.get('relevanceScore', 0), reverse=True)
-        
-        # Return limited number of results
-        return results[:max_results]
+    # Removed search_lyrics_fallback method as per requirements to only use external sources
     
     def search_lyrics(self, query: str, max_results: int = 10) -> List[Dict[str, Any]]:
         """
-        Search for song lyrics using multiple sources.
+        Search for song lyrics using multiple external sources.
         
         Args:
             query: Search query string
@@ -414,15 +350,22 @@ class LyricsService:
             
         Returns:
             List of dictionaries containing song information
+            
+        Raises:
+            Exception: If no results are found from any of the external sources
         """
-        # Search using multiple methods
-        genius_results = self.search_lyrics_genius(query, max_results=max_results//4)
-        google_results = self.search_lyrics_google(query, max_results=max_results//4)
-        chosic_results = self.search_lyrics_chosic(query, max_results=max_results//4)
-        fallback_results = self.search_lyrics_fallback(query, max_results=max_results//4)
+        # Search using multiple external methods
+        genius_results = self.search_lyrics_genius(query, max_results=max_results//3)
+        google_results = self.search_lyrics_google(query, max_results=max_results//3)
+        chosic_results = self.search_lyrics_chosic(query, max_results=max_results//3)
         
         # Combine results
-        all_results = genius_results + google_results + chosic_results + fallback_results
+        all_results = genius_results + google_results + chosic_results
+        
+        # Check if we have any results
+        if not all_results:
+            logger.error(f"No lyrics found for query: {query}")
+            raise Exception(f"No lyrics found for query: {query}. Please try a different search term.")
         
         # Sort by relevance score
         all_results.sort(key=lambda x: x.get('relevanceScore', 0), reverse=True)
